@@ -1,0 +1,80 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Resources:
+  Api:
+    Type: AWS::Serverless::Api
+    Properties:
+      DefinitionBody:
+        openapi: 3.0.1
+        paths:
+          /logs:
+            post:
+              responses:
+                "200":
+                  content:
+                    application/json:
+                      schema:
+                        $ref: "#/components/schemas/Empty"
+              x-amazon-apigateway-integration:
+                credentials: !GetAtt ApiRole.Arn
+                uri: !Sub arn:aws:apigateway:${AWS::Region}:logs:action/PutLogEvents
+                httpMethod: POST
+                responses:
+                  default:
+                    statusCode: 200
+                    responseTemplates:
+                      application/json: |
+                        {
+                          "message": "success"
+                        }
+                requestParameters:
+                  integration.request.header.Content-Type: "'application/x-amz-json-1.1'"
+                  integration.request.header.X-Amz-Target: "'Logs_20140328.PutLogEvents'"
+                requestTemplates:
+                  application/json: !Sub |
+                    {
+                      "logEvents": [
+                          {
+                            "message": $input.json('$.message'),
+                            "timestamp": $input.json('$.timestamp')
+                          }
+                      ],
+                      "logGroupName": "${LogGroup}",
+                      "logStreamName": "${LogStream}"
+                    }
+                passthroughBehavior: when_no_templates
+                type: aws
+      OpenApiVersion: 3.0.1
+      StageName: Test
+
+  ApiRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - apigateway.amazonaws.com
+      Policies:
+        - PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Action:
+                  - logs:PutLogEvents
+                Effect: Allow
+                Resource:
+                  - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${LogGroup}:log-stream:${LogStream}
+          PolicyName: put-log-events
+
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+
+  LogStream:
+    Type: AWS::Logs::LogStream
+    Properties:
+      LogGroupName: !Ref LogGroup
