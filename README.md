@@ -1,6 +1,6 @@
-# REST API Gateway Cloudwatch Logs AWS Service Integration Example
+# REST API Gateway CloudWatch Logs AWS Service Integration Example CloudFormation Template
 
-This template configures a REST API Gateway AWS service integration directly to CloudWatch Logs.
+This CloudFormation template configures a REST API Gateway AWS service integration directly to CloudWatch Logs.
 
 This is a basic example with no authentication required. In the real world, you probably want to set that up.
 
